@@ -1,56 +1,56 @@
 ---
 
 - name: prepare ubuntu golden image
-  connection: local
-  hosts: localhost
+  hosts: linux
   gather_facts: no
-  vars:
-          ansible_become_password: opgero8t
   tasks:
-          #update en upgrade
-          #install neovim
-          #install zsh en ohmyzsh
-          - name: 
-            apt:
-                name: "*"
-                state: latest
-            become: yes
-          - name: 
-            apt:
-                upgrade: dist
-            become: yes
-          - name: 
-            apt:
-                pkg:
-                        - build-essential
-                        - curl
-                        - file
-                        - git
-                        - zsh
-                        - git-core
-                        - fonts-powerline
-                        - silversearcher-ag
-            become: yes
-            tags: apt-install
-          - name: install oh my zsh
-            shell: 
-                cmd: sh -c "$(curl -fsSL https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
-          - name: install powerlevel10K
-            lineinfile:
-                    path: ~/.zshrc
-                    regexp: ^(ZSH_THEME).*
-                    line: ZSH_THEME="powerlevel10k/powerlevel10k"
-            tags: zsh-powerlevel10k
-          - name: get nvim configuration file
-            git:
-                    repo: https://github.com/rinmeister/nvim.git
-                    dest: /home/ubuntu/.config/nvim
-            tags: nvim
-          - name: set up alias for nvim
-            lineinfile:
-                    path: /home/ubuntu/.zshrc
-                    insertafter: ^#\salias\soh.*
-                    line: alias vi="nvim"
-            tags:
-                    - nvim
-                    - nvim-config
+    - name: apt update 
+      apt:
+        update_cache: yes
+      become: yes
+    - name: apt upgrade 
+      apt:
+          upgrade: dist
+      become: yes
+    - name: install packages 
+      apt:
+          pkg:
+                  - build-essential
+                  - curl
+                  - file
+                  - git
+                  - zsh
+                  - git-core
+                  - fonts-powerline
+                  - silversearcher-ag
+                  - neovim
+      become: yes
+      tags: apt-install
+    - name: install oh my zsh
+      shell: 
+        cmd: sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+    - name: get powerleve10k
+      shell:
+        cmd: git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
+    - name: install powerlevel10K
+      lineinfile:
+              path: ~/.zshrc
+              regexp: ^(ZSH_THEME).*
+              line: ZSH_THEME="powerlevel10k/powerlevel10k"
+      tags: zsh-powerlevel10k
+    # run p10k interactive wizard afterwards.
+    # change the default shell with chsh -s $(which zsh) afterwards.
+    - name: get nvim configuration file
+      git:
+              repo: https://github.com/rinmeister/nvim.git
+              dest: /home/ubuntu/.config/nvim
+      tags: nvim
+    - name: set up alias for nvim
+      lineinfile:
+              path: /home/ubuntu/.zshrc
+              insertafter: ^#\salias\soh.*
+              line: alias vi="nvim"
+      tags:
+              - nvim
+              - nvim-config
+    # run PlugInstall from neovim afterwards.
