@@ -1,0 +1,64 @@
+cat /boot/firmware/cmdline.txt
+Check het stuk root=
+in mijn geval staat daar root=LABEL-writable. Onthoud dit voor nu even
+
+Check available storage partitions 
+blkid
+kijk hier of de harddisk voorkomt in de lijst. In mijn geval is dat /dev/sda1
+Ook kun je hier zien wat de huidige opstart partitie is. Hier staat
+LABEL-writable bij. Dit komt overeen met wat de output die je hebt genoteerd
+in de vorige stap.
+
+Maak 2 partities op de nieuwe disk. 1 partitie is 25% en is voor het OS. De
+overige 75% is voor k8s en longhorn.
+
+sudo parted
+print all prints all partition
+sda is de drive die bij mij gepartitioneerd kan worden.
+select /dev/sda
+print
+mklabel gpt
+print
+Check of er een partition table gpt is gemaakt.
+mkpart os ext4 0gb 25%
+mkpart data ext4 25% 100%
+print en check alle partitie informatie
+q to exit
+
+Formatteer de partities
+sudo mkfs.ext4 -L os /dev/sda1
+sudo mkfs.ext4 -L data /dev/sda2
+
+reboot de machine
+sudo blkid, kijk welke partitie hoort bij LABEL="writable" Dit is de partitie
+met het OS er op. In mijn geval is dat /dev/mmcblk0p2
+
+Kopieer alle data van deze partitie naar de net gemaakte 'os' partitie. In mijn
+geval is dat /dev/sda1. Gebruik daarvoor 'dd'
+sudo dd if=/dev/mmcblk0p2 of=/dev/sda1 bs=32M conv=noerror,sync (duurt lang)
+Check het filesystem
+sudo e2fsck -f /dev/sda1 (fix errors: yes)
+sudo reboot
+sudo resize2fs /dev/sda1 (check of het hele fs al leesbaar is. Je verwacht 
+een melding: Nothing to do!)
+Pas /boot/firmware/cmdline.txt en /etc/fstab aan om de partitie te gebruiken om
+te booten. 
+blkid (kopieer het partuuid van de hdd partitie en zet die in de cmdline.txt op
+de plek van root=LABEL=writable. Maak daarvan root=PARTUUID=
+d2d6c0b1-636b-4fcf-9935-2086849f4633 bijvoorbeeld
+sudo reboot, reboot de machine.
+Pas /etc/fstab aan met hetzelfde PARTUUID. Vervang het partuuid van de 
+originele opstartpartitie met die van de hdd. In mijn geval:
+vervang LABEL=writable door PARTUUID=d2d6c0b1-636b-4fcf-9935-2086849f4633
+reboot nog een keer: sudo reboot
+Maak een swapfile:
+sudo fallocate -l 8G /var/swapfile
+sudo chmod 600 /var/swapfile
+sudo mkswap /var/swapfile
+sudo swapon /var/swapfile
+sudo nano /etc/fstab
+/var/swapfile swap swap defaults 0 0
+
+
+
+

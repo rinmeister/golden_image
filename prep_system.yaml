@@ -38,7 +38,7 @@
               regexp: ^(ZSH_THEME).*
               line: ZSH_THEME="powerlevel10k/powerlevel10k"
       tags: zsh-powerlevel10k
-    # run p10k interactive wizard afterwards.
+    # run p10k interactive wizard afterwards by starting zsh from bash prompt
     # change the default shell with chsh -s $(which zsh) afterwards.
     - name: get nvim configuration file
       git:

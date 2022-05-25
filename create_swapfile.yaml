@@ -1,0 +1,19 @@
+---
+
+- name: create swapfile
+  hosts: linux
+  gather_facts: no
+  tasks:
+    - name: Create swapfile
+      shell: |
+        fallocate -l 8G /var/swapfile
+        chmod 600 /var/swapfile
+        mkswap /var/swapfile
+        swapon /var/swapfile
+      become: yes
+    - name: add swap line to fstab
+      lineinfile:
+        path: /etc/fstab
+        line: /var/swapfile swap swap defaults 0 0
+      become: yes
+
